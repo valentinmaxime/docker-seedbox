@@ -1,0 +1,67 @@
+# Environnement
+.env
+.env.local
+*.crt
+*.pid
+*.db
+*.db-shm
+*.db-wal
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+.venv/
+venv/
+.env/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.auth/.cache/
+auth/.env
+
+# Docker / Caddy / Gluetun / etc.
+downloads/
+media/
+config/**/logs/
+config/**/Backups/
+config/**/Sentry/
+config/**/.cache/
+config/**/torrents/*
+!config/joal/torrents/.keep
+config/**/GeoDB/
+config/gluetun/servers.json
+config/gluetun/forwarded_port.txt
+config/qbittorrent/qBittorrent/ipc-socket
+config/syncthing/
+config/sonarr/
+config/radarr/
+config/qbittorent/
+config/prowlarr/asp/
+config/prowlarr/config.xml
+config/gluetun/
+
+# Caddy / SSL certs
+*.crt
+*.key
+
+# IDE / system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+test.txt
+
+# local tools
+seedbox.maison.lan.crt
+caddy-root.crt

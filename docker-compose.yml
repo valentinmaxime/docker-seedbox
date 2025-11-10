@@ -1,0 +1,220 @@
+version: "3.9"
+
+services:
+
+  vpn:
+    image: qmcgaw/gluetun
+    container_name: vpn
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER}
+      - VPN_TYPE=openvpn
+      - VPN_PORT_FORWARDING_PROVIDER=${VPN_SERVICE_PROVIDER}
+      - OPENVPN_USER=${OPENVPN_USER}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+      - SERVER_REGIONS=${VPN_SERVER_REGIONS}
+      - TZ=${TZ}
+      - HTTPPROXY=on
+      - PORT_FORWARD_ONLY=true
+      - VPN_PORT_FORWARDING=on
+      - PRIVATE_INTERNET_ACCESS_VPN_PORT_FORWARDING=on
+      - PRIVATE_INTERNET_ACCESS_VPN_PORT_FORWARDING_STATUS_FILE=/gluetun/forwarded_port.txt
+      - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24
+      # Expose only ports you need to access locally through the VPN container
+      - FIREWALL_INPUT_PORTS=80,443,8081,9696,8989,7878,8085,8003,8888,22000,21027,7878,8989,21273
+      - DOT=off
+    volumes:
+      - ./config/gluetun:/gluetun
+    ports: # Uncomment/keep these to allow local access via the VPN container
+      - "80:80"
+      - "443:443"
+      - "${QBITTORRENT_PORT}:8080"
+      - "${SONARR_PORT}:8989"
+      - "${RADARR_PORT}:7878"
+      - "${JOAL_PORT}:8003"
+      # - "${PROWLARR_PORT}:9696"
+    restart: unless-stopped
+  
+  auth:
+    build: ./auth
+    container_name: auth
+    network_mode: "service:vpn"
+    depends_on:
+      - vpn
+    environment:
+      - TZ=${TZ}
+      - AUTH_USERNAME=${AUTH_USERNAME}
+      - AUTH_PASSWORD_HASH=${AUTH_PASSWORD_HASH}
+      - AUTH_SESSION_SECRET=${AUTH_SESSION_SECRET}
+      - AUTH_API_TOKENS=${AUTH_API_TOKENS}      
+      - AUTH_API_HEADER=X-Seedbox-Token 
+      - AUTH_API_ALLOWED_PREFIXES=/sonarr,/radarr,/qbittorrent,/api
+    volumes:
+      - ./dashboard:/app/public:ro
+    restart: unless-stopped
+
+  dashboard_api:
+    build: ./api
+    container_name: dashboard_api
+    depends_on:
+    - vpn
+    network_mode: "service:vpn"
+    pid: host # read the host /proc
+    environment:
+      - TZ=${TZ}
+      - SB_ALLOWED=qbittorrent,prowlarr,sonarr,radarr,joal,syncthing,caddy,auth,vpn
+      - PSUTIL_PROCFS_PATH=/hostproc
+      - SB_DISK_PATH=/hostdisk  
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # contrôle des containers
+      - C:\:/hostfs:ro # disque du host (racine pour avoir toute la capacité dans les stats)
+      - /proc:/hostproc:ro # proc du host
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    container_name: caddy
+    depends_on:
+      - vpn
+      - auth
+    network_mode: "service:vpn"
+    environment:
+      - DOMAIN=${DOMAIN}
+      - EMAIL=${EMAIL}
+      - DASHBOARD_PORT=${DASHBOARD_PORT}
+    volumes:
+      - ./config/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./dashboard:/var/www/dashboard:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    depends_on:
+      - vpn
+    network_mode: "service:vpn"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+      - WEBUI_PORT=8080
+      - QBT_BTPORT=21273
+    volumes:
+      - ./config/qbittorrent:/config
+      - ./downloads/torrents:/downloads
+      - ./media:/media
+    restart: unless-stopped
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    depends_on:
+      - vpn
+    network_mode: "service:vpn"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    volumes:
+      - ./config/prowlarr:/config
+    restart: unless-stopped
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    depends_on:
+      - prowlarr
+    network_mode: "service:vpn"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    volumes:
+      - ./config/sonarr:/config
+      - ./downloads:/downloads
+      - ./media/tv:/tv
+    restart: unless-stopped
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    depends_on:
+      - prowlarr
+    network_mode: "service:vpn"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    volumes:
+      - ./config/radarr:/config
+      - ./downloads:/downloads
+      - ./media/movies:/movies
+    restart: unless-stopped
+
+  joal:
+    image: anthonyraymond/joal:latest
+    container_name: joal
+    depends_on:
+      - vpn
+    network_mode: "service:vpn"
+    command:
+    - --joal-conf=/data
+    - --spring.main.web-environment=true
+    - --server.port=8003
+    - --joal.ui.path.prefix=${JOAL_PREFIX}
+    - --joal.ui.secret-token=${JOAL_SECRET}
+    volumes:
+      - ./config/joal:/data
+      - ./downloads/torrents:/torrents:ro
+    restart: unless-stopped
+
+  syncthing:
+    image: lscr.io/linuxserver/syncthing
+    container_name: syncthing
+    depends_on:
+      - vpn
+    network_mode: "service:vpn"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+      - STGUIADDRESS=0.0.0.0:8384
+    volumes:
+      - ./config/syncthing:/config
+      - ./media:/media
+    restart: unless-stopped
+
+  autocleaner:
+    image: alpine:latest
+    container_name: autocleaner
+    volumes:
+      - ./downloads:/downloads
+      - ./media:/media
+    command: >
+      sh -c "while true; do
+                echo '--- Nettoyage /downloads (>7 jours)...';
+                find /downloads -type f -mtime +7 ! -name '.keep' -delete;
+                find /downloads -type d -empty ! -path /downloads -delete;
+
+                echo '--- Nettoyage /media (>7 jours)...';
+                find /media -type f -mtime +7 \
+                  ! -name '.keep' \
+                  ! -name '.sync*' \
+                  -delete;
+
+                find /media -type d -empty \
+                  ! -path /media \
+                  ! -name '.sync' \
+                  -delete;
+
+                echo '--- Nettoyage terminé, pause 24h ---';
+                sleep 24h;
+              done"
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

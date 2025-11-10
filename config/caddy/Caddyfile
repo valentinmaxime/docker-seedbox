@@ -1,0 +1,116 @@
+{
+  debug
+}
+
+seedbox.local:443, {$DOMAIN}:443 {
+	
+	encode gzip
+
+	# 1) Fichiers statiques du dashboard (dont favicon)
+	@fav path /favicon.ico /favicon-16x16.png /favicon-32x32.png /apple-touch-icon.png /site.webmanifest
+	handle @fav {
+		root * /var/www/dashboard
+		file_server
+	}
+
+	# reverse proxy vers la page de login (service 'auth' via loopback du namespace VPN)
+    reverse_proxy 127.0.0.1:3000
+
+	respond /health "ok" 200
+
+	# --- Redir auto /app -> /app/ ---
+	@noSlash path /qbittorrent /prowlarr /sonarr /radarr /lidarr /sabnzbd /resilio
+	redir @noSlash {uri}/ 301
+
+	# ======================
+	# Apps AVEC UrlBase
+	# ======================
+
+	@api path /api/*
+		handle @api {
+		reverse_proxy 127.0.0.1:5005
+	}		
+
+	# qBittorrent (pas d'UrlBase, mais sert bien à /qbittorrent/ via sous-chemin brut)
+ 	handle /qbittorrent/* {
+        forward_auth http://127.0.0.1:3000 {
+            uri /authz/verify
+            copy_headers X-User
+        }
+ 		uri strip_prefix /qbittorrent
+ 		reverse_proxy 127.0.0.1:8080
+ 	}
+
+  # Prowlarr (UrlBase = /prowlarr)
+  handle /prowlarr/* {
+      forward_auth http://127.0.0.1:3000 {
+          uri /authz/verify
+          copy_headers X-User
+      }
+      reverse_proxy 127.0.0.1:9696
+  }
+
+  # Sonarr (UrlBase = /sonarr)
+  handle /sonarr/* {
+      forward_auth http://127.0.0.1:3000 {
+          uri /authz/verify
+          copy_headers X-User
+      }
+      reverse_proxy 127.0.0.1:8989
+  }
+
+  # Radarr (UrlBase = /radarr)
+  handle /radarr/* {
+      forward_auth http://127.0.0.1:3000 {
+          uri /authz/verify
+          copy_headers X-User
+      }
+      reverse_proxy 127.0.0.1:7878
+  }
+
+  # Lidarr (UrlBase = /lidarr)
+  handle /lidarr/* {
+      forward_auth http://127.0.0.1:3000 {
+          uri /authz/verify
+          copy_headers X-User
+      }
+      reverse_proxy 127.0.0.1:8686
+  }
+
+	# syncthing (UrlBase = /syncthing)
+  # Syncthing (protégé via forward_auth)
+  handle /syncthing/* {
+      forward_auth http://127.0.0.1:3000 {
+          uri /authz/verify
+          copy_headers X-User
+      }
+      uri strip_prefix /syncthing
+      reverse_proxy 127.0.0.1:8384 {
+          header_up Host {host}
+          header_up X-Forwarded-Proto https
+          transport http {
+              versions 1.1
+          }
+      }
+  }
+  redir /syncthing /syncthing/ 302
+
+	# Dashboard
+	reverse_proxy 127.0.0.1:3000 {
+        header_up Host {upstream_hostport}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-Host {host}
+        transport http {
+            versions 1.1
+        }
+  }
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer-when-downgrade"
+		X-Frame-Options "SAMEORIGIN"
+	}
+
+	tls internal
+}

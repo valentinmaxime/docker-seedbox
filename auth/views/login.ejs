@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Connexion - Seedbox</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --radius: 16px;
+        --bg:
+          radial-gradient(1100px 700px at 12% 10%, rgba(99,102,241,.25), transparent 60%),
+          radial-gradient(900px 600px at 88% 90%, rgba(16,185,129,.22), transparent 60%),
+          linear-gradient(180deg, rgba(0,0,0,.03), transparent);
+        --card-bg: color-mix(in oklab, Canvas 92%, transparent);
+        --card-brd: color-mix(in oklab, CanvasText 22%, transparent);
+        --focus: color-mix(in oklab, Highlight 75%, CanvasText 25%);
+        --muted: color-mix(in oklab, CanvasText 50%, transparent);
+        --danger: #d92d20;
+        --ok: #16a34a;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --card-bg: color-mix(in oklab, Canvas 85%, transparent);
+          --card-brd: color-mix(in oklab, CanvasText 28%, transparent);
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        display: grid;
+        place-items: center;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, sans-serif;
+        background: var(--bg), Canvas;
+        color: CanvasText;
+      }
+      .wrap {
+        width: min(440px, 92vw);
+      }
+      .logo {
+        display: flex; align-items: center; gap: 10px; margin-bottom: 16px; user-select: none;
+      }
+      .logo-badge {
+        width: 44px; height: 44px; border-radius: 12px;
+        background: linear-gradient(135deg, rgba(99,102,241,.7), rgba(16,185,129,.7));
+        display: grid; place-items: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,.12);
+        font-weight: 900; color: white;
+      }
+      .logo-title { font-size: 1.25rem; font-weight: 800; letter-spacing: .2px; }
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-brd);
+        border-radius: var(--radius);
+        box-shadow: 0 20px 60px rgba(0,0,0,.12);
+        padding: 22px;
+        backdrop-filter: blur(8px);
+      }
+      .title { margin: 0 0 8px; font-size: 1.35rem; font-weight: 800; }
+      .muted { color: var(--muted); margin: 0 0 16px; }
+      form { display: grid; gap: 12px; }
+      label { font-weight: 650; font-size: .95rem; margin-bottom: 6px; display: inline-block; }
+      .field { display: grid; gap: 6px; }
+      .control {
+        display: grid; grid-template-columns: 1fr auto; align-items: center;
+        border: 1px solid var(--card-brd);
+        background: Field; color: FieldText;
+        border-radius: 12px; overflow: hidden;
+      }
+      input[type="text"], input[type="password"] {
+        width: 100%; border: 0; outline: 0; font-size: 1rem; padding: 12px 14px; background: transparent; color: inherit;
+      }
+      .btn-eye {
+        border: 0; background: transparent; cursor: pointer;
+        padding: 0 12px; height: 100%;
+        color: var(--muted); font-weight: 700;
+      }
+      .btn {
+        padding: 12px 16px; border-radius: 12px; border: 0; cursor: pointer;
+        background: Highlight; color: HighlightText; font-weight: 800; font-size: 1rem;
+      }
+      .btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+      .row { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+      .error { color: var(--danger); font-weight: 650; margin: 6px 0 0; }
+      .caps { color: var(--muted); font-size: .9rem; display: none; }
+      .caps.on { display: inline; color: var(--danger); }
+      .footer { margin-top: 10px; color: var(--muted); font-size: .9rem; display: flex; justify-content: space-between; align-items: center; }
+      .link { color: color-mix(in oklab, var(--focus) 90%, CanvasText); text-decoration: none; font-weight: 700; }
+      .link:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="logo">
+        <div class="logo-badge">SB</div>
+        <div class="logo-title">Seedbox</div>
+      </div>
+
+      <div class="card" role="region" aria-labelledby="login-title">
+        <h1 id="login-title" class="title">Connexion</h1>
+        <p class="muted">Accède au dashboard après authentification.</p>
+
+        <% if (error) { %>
+          <p class="error" role="alert"><%= error %></p>
+        <% } %>
+
+        <form method="post" action="/login" autocomplete="on" id="login-form">
+          <input type="hidden" name="next" value="<%= nextUrl %>" />
+
+          <div class="field">
+            <label for="username">Utilisateur</label>
+            <div class="control">
+              <input id="username" name="username" type="text" autocomplete="username" required autofocus />
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="row" style="width:100%;">
+              <label for="password">Mot de passe</label>
+              <span id="caps" class="caps" aria-live="polite">Verr. Maj activé</span>
+            </div>
+            <div class="control">
+              <input id="password" name="password" type="password" autocomplete="current-password" required />
+              <button type="button" class="btn-eye" id="togglePwd" aria-label="Afficher/Masquer le mot de passe">👁</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <button type="submit" class="btn">Se connecter</button>
+            <a class="link" href="/login">Réinitialiser</a>
+          </div>
+        </form>
+
+        <div class="footer">
+          <span class="muted"></span>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      (function () {
+        const pwd = document.getElementById("password");
+        const toggle = document.getElementById("togglePwd");
+        const caps = document.getElementById("caps");
+        const form = document.getElementById("login-form");
+
+        // Toggle affichage mot de passe
+        toggle.addEventListener("click", () => {
+          pwd.type = pwd.type === "password" ? "text" : "password";
+          toggle.textContent = pwd.type === "password" ? "👁" : "🙈";
+          pwd.focus();
+        });
+
+        // Indicateur Verr. Maj
+        function handleCaps(e) {
+          const isCaps = e.getModifierState && e.getModifierState("CapsLock");
+          caps.classList.toggle("on", !!isCaps);
+        }
+        pwd.addEventListener("keydown", handleCaps);
+        pwd.addEventListener("keyup", handleCaps);
+        pwd.addEventListener("focus", handleCaps);
+
+        // Anti double-submit
+        form.addEventListener("submit", () => {
+          const btn = form.querySelector("button[type=submit]");
+          btn.disabled = true;
+          setTimeout(() => (btn.disabled = false), 2000);
+        });
+      })();
+    </script>
+  </body>
+</html>

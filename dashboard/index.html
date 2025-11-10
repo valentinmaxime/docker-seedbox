@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Seedbox - Tableau de bord</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <style>
+    :root{
+      color-scheme: light dark;
+      --radius:16px;
+      --bg:
+        radial-gradient(1100px 700px at 12% 10%, rgba(99,102,241,.25), transparent 60%),
+        radial-gradient(900px 600px at 88% 90%, rgba(16,185,129,.22), transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,.03), transparent);
+      --card-bg: color-mix(in oklab, Canvas 92%, transparent);
+      --card-brd: color-mix(in oklab, CanvasText 22%, transparent);
+      --muted: color-mix(in oklab, CanvasText 50%, transparent);
+      --accent: color-mix(in oklab, Highlight 85%, CanvasText);
+      --danger:#d92d20;
+      --ok:#16a34a;
+      --warn:#f59e0b;
+      --err:#ef4444;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{ --card-bg: color-mix(in oklab, Canvas 85%, transparent); --card-brd: color-mix(in oklab, CanvasText 28%, transparent) }
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{ margin:0; background: var(--bg), Canvas; color: CanvasText; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, sans-serif }
+
+    .topbar{ position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; border-bottom:1px solid var(--card-brd); background: var(--card-bg); backdrop-filter: blur(8px) }
+    .brand{display:flex; align-items:center; gap:10px}
+    .badge{ width:32px; height:32px; border-radius:10px; display:grid; place-items:center; background: linear-gradient(135deg, rgba(99,102,241,.75), rgba(16,185,129,.75)); color: white; font-weight:900; box-shadow: 0 10px 30px rgba(0,0,0,.12); user-select:none }
+    .title{margin:0; font-size:16px; font-weight:800; letter-spacing:.2px}
+    .actions{display:flex; gap:10px; align-items:center}
+    .btn{ display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 12px; border:1px solid var(--card-brd); border-radius:12px; background: color-mix(in oklab, Canvas 94%, transparent); color: CanvasText; font-weight:800; cursor:pointer; text-decoration:none }
+    .btn:hover{border-color: var(--accent)}
+    .btn:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+    .btn.danger{background: color-mix(in oklab, #ffefef 70%, transparent); border-color: color-mix(in oklab, #ff6b6b 55%, var(--card-brd))}
+    .btn[disabled]{opacity:.5; cursor:not-allowed}
+    .btn.small{height:30px; font-size:12px; padding:0 10px; border-radius:10px}
+    .btn svg{width:16px;height:16px;display:block}
+
+    header{padding:28px 20px; text-align:center}
+    h1{margin:0; font-size:28px; letter-spacing:.2px; font-weight:900}
+    .subtitle{color: var(--muted); margin:8px 0 0}
+
+    .grid{ display:grid; gap:16px; padding:20px; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); max-width:1100px; margin: 0 auto 16px }
+
+    .card{ background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)); border:1px solid var(--card-brd); border-radius:16px;padding:18px; text-decoration:none;color:inherit; display:flex;flex-direction:column;gap:8px; transition:transform .15s ease,border-color .15s ease }
+    .card:hover{ transform:translateY(-2px); border-color:var(--accent) }
+    .tag{ font-size:11px; padding:3px 8px; border-radius:999px; width:max-content; border:1px solid var(--card-brd); color: var(--muted); background: color-mix(in oklab, Canvas 96%, transparent) }
+    .card-title{font-weight:800; font-size:16px; letter-spacing:.2px}
+    .card-desc{font-size:13px; color: var(--muted)}
+
+    footer{padding:16px; text-align:center; color: var(--muted); font-size:12px}
+
+    /* Section statut */
+    .section{ max-width:1100px; margin: 0 auto; padding:0 20px 10px }
+    .section h3{ margin:4px 4px 10px; font-size:18px; letter-spacing:.2px }
+    .service-list{ display:grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap:12px }
+    .service{ border:1px solid var(--card-brd); border-radius:16px; background:var(--card-bg); padding:12px; display:flex; align-items:center; justify-content:space-between; gap:10px }
+    .svc-meta{ display:flex; align-items:center; gap:10px }
+    .dot{ width:10px; height:10px; border-radius:999px; background: var(--warn) }
+    .dot.ok{ background: var(--ok) }
+    .dot.err{ background: var(--err) }
+    .svc-name{ font-weight:800 }
+    .svc-state{ font-size:12px; color:var(--muted) }
+
+    .metrics{ display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:12px }
+    .metric{ border:1px solid var(--card-brd); border-radius:16px; background:var(--card-bg); padding:14px }
+    .metric .label{ font-size:12px; color:var(--muted) }
+    .metric .value{ font-weight:900; font-size:20px }
+    .bar{ height:8px; border-radius:999px; background: color-mix(in oklab, CanvasText 10%, transparent); overflow:hidden }
+    .bar > i{ display:block; height:100%; width:0%; background: linear-gradient(90deg, var(--ok), var(--warn)) }
+  </style>
+</head>
+<body>
+  <div class="topbar" role="navigation" aria-label="Barre d’actions">
+    <div class="brand"><div class="badge" aria-hidden="true">SB</div><h2 class="title">Seedbox</h2></div>
+    <div class="actions">
+      <form method="post" action="/logout" style="margin:0"><button class="btn danger" type="submit" title="Se déconnecter">🚪 Logout</button></form>
+    </div>
+  </div>
+
+  <header>
+    <h1>Tableau de bord Seedbox</h1>
+    <p class="subtitle">Services exposés derrière VPN + HTTPS + authentification.</p>
+  </header>
+
+  <!-- Grille liens -->
+  <main class="grid">
+    <a class="card" href="/qbittorrent" target="_blank" rel="noopener">
+      <span class="tag">Torrent</span><span class="card-title">qBittorrent</span><span class="card-desc">Client BitTorrent web.</span>
+    </a>
+    <a class="card" href="/prowlarr" target="_blank" rel="noopener">
+      <span class="tag">Indexers</span><span class="card-title">Prowlarr</span><span class="card-desc">Gestion unifiée des indexers pour *arr.</span>
+    </a>
+    <a class="card" href="/sonarr" target="_blank" rel="noopener">
+      <span class="tag">Séries</span><span class="card-title">Sonarr</span><span class="card-desc">Téléchargement & tri des séries.</span>
+    </a>
+    <a class="card" href="/radarr" target="_blank" rel="noopener">
+      <span class="tag">Films</span><span class="card-title">Radarr</span><span class="card-desc">Téléchargement & tri des films.</span>
+    </a>
+    <a class="card" href="http://seedbox.maison.lan:8003/joal/ui/#/" target="_blank" rel="noopener">
+      <span class="tag">Joal</span><span class="card-title">JOAL UI</span><span class="card-desc">Seed simulé (web UI).</span>
+    </a>
+    <a class="card" href="/syncthing" target="_blank" rel="noopener">
+      <span class="tag">Sync</span><span class="card-title">Syncthing</span><span class="card-desc">Synchronisation multi-appareils.</span>
+    </a>
+    <a class="card" href="https://thevdj.fr4.quickconnect.to/" target="_blank" rel="noopener">
+      <span class="tag">Nas</span><span class="card-title">NAS</span><span class="card-desc">Serveur NAS</span>
+    </a>
+  </main>
+
+  <!-- Santé système -->
+  <section class="section">
+    <h3>Santé du système</h3>
+    <div class="metrics">
+      <div class="metric"><div class="label">Disque (/) utilisé</div><div class="value" id="disk-text">-</div><div class="bar"><i id="disk-bar"></i></div></div>
+      <div class="metric"><div class="label">RAM utilisée</div><div class="value" id="ram-text">-</div><div class="bar"><i id="ram-bar"></i></div></div>
+      <div class="metric"><div class="label">CPU</div><div class="value" id="cpu-text">-</div><div class="bar"><i id="cpu-bar"></i></div></div>
+    </div>
+  </section>
+
+  <!-- Statut des services -->
+  <section class="section">
+    <h3>Statut des services</h3>
+    <div id="services" class="service-list"></div>
+  </section>
+
+  <footer>Powered by love.</footer>
+
+  <script>
+    const API_BASE = '' // même origine; sinon mettre l'URL complète (https://…)
+    const serviceOrder = [
+      { key:'qbittorrent', label:'qBittorrent' },
+      { key:'prowlarr', label:'Prowlarr' },
+      { key:'sonarr', label:'Sonarr' },
+      { key:'radarr', label:'Radarr' },
+      { key:'syncthing', label:'Syncthing' },
+      { key:'joal', label:'JOAL' }
+    ]
+
+    const $services = document.getElementById('services')
+
+    function serviceRow(svc){
+      const wrap = document.createElement('div'); wrap.className = 'service'; wrap.dataset.key = svc.key
+      wrap.innerHTML = `
+        <div class="svc-meta">
+          <span class="dot ${svc.state==='active'?'ok':(svc.state==='failed'?'err':'')}"></span>
+          <div>
+            <div class="svc-name">${svc.label}</div>
+            <div class="svc-state">${svc.state}</div>
+          </div>
+        </div>
+        <div class="svc-actions">
+          <button class="btn small" data-action="restart">Redémarrer</button>
+        </div>`
+      wrap.querySelector('button[data-action="restart"]').onclick = async () => {
+        const btn = wrap.querySelector('button'); btn.disabled = true; btn.textContent = '…'
+        try{
+          const r = await fetch(`${API_BASE}/api/service/${encodeURIComponent(svc.key)}/restart`, {method:'POST'})
+          if(!r.ok) throw new Error('HTTP '+r.status)
+          await refreshStatus()
+        }catch(e){
+          alert('Échec du redémarrage: '+e.message)
+        }finally{
+          btn.disabled = false; btn.textContent = 'Redémarrer'
+        }
+      }
+      return wrap
+    }
+
+    async function refreshStatus(){
+      try{
+        const r = await fetch(`${API_BASE}/api/status`)
+        const data = await r.json()
+        $services.innerHTML=''
+        for(const s of serviceOrder){
+          const state = data[s.key]?.state || 'unknown'
+          $services.appendChild(serviceRow({key:s.key, label:s.label, state}))
+        }
+      }catch(e){ console.error(e) }
+    }
+
+    async function refreshSysinfo(){
+      try{
+        const r = await fetch(`${API_BASE}/api/sysinfo`)
+        const d = await r.json()
+        // Disque
+        const du = d.disk.percent; byId('disk-text').textContent = `${du}% (${fmtBytes(d.disk.used)} / ${fmtBytes(d.disk.total)})`
+        setBar('disk-bar', du)
+        // RAM
+        const ru = d.ram.percent; byId('ram-text').textContent = `${ru}% (${fmtBytes(d.ram.used)} / ${fmtBytes(d.ram.total)})`
+        setBar('ram-bar', ru)
+        // CPU
+        const cpu = d.cpu.percent; byId('cpu-text').textContent = `${cpu}% (load ${d.cpu.load1.toFixed(2)})`
+        setBar('cpu-bar', cpu)
+      }catch(e){ console.error(e) }
+    }
+
+    function byId(id){ return document.getElementById(id) }
+    function setBar(id, pct){ const el = byId(id); el.style.width = Math.min(100, Math.max(0, pct)) + '%' }
+    function fmtBytes(n){
+      const u = ['B','KB','MB','GB','TB','PB']; let i=0, v = n
+      while(v>=1024 && i<u.length-1){ v/=1024; i++ }
+      return v.toFixed(v<10?1:0)+' '+u[i]
+    }
+
+    refreshStatus(); refreshSysinfo();
+    setInterval(refreshStatus, 10_000)
+    setInterval(refreshSysinfo, 5_000)
+  </script>
+</body>
+</html>
