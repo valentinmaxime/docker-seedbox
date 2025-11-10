@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Connexion - Seedbox</title>
+    <title>Login - Seedbox</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -98,8 +98,8 @@
       </div>
 
       <div class="card" role="region" aria-labelledby="login-title">
-        <h1 id="login-title" class="title">Connexion</h1>
-        <p class="muted">Accède au dashboard après authentification.</p>
+        <h1 id="login-title" class="title">Login</h1>
+        <p class="muted">Access the dashboard after authentication.</p>
 
         <% if (error) { %>
           <p class="error" role="alert"><%= error %></p>
@@ -109,7 +109,7 @@
           <input type="hidden" name="next" value="<%= nextUrl %>" />
 
           <div class="field">
-            <label for="username">Utilisateur</label>
+            <label for="username">Username</label>
             <div class="control">
               <input id="username" name="username" type="text" autocomplete="username" required autofocus />
             </div>
@@ -117,18 +117,18 @@
 
           <div class="field">
             <div class="row" style="width:100%;">
-              <label for="password">Mot de passe</label>
-              <span id="caps" class="caps" aria-live="polite">Verr. Maj activé</span>
+              <label for="password">Password</label>
+              <span id="caps" class="caps" aria-live="polite">Caps Lock is on</span>
             </div>
             <div class="control">
               <input id="password" name="password" type="password" autocomplete="current-password" required />
-              <button type="button" class="btn-eye" id="togglePwd" aria-label="Afficher/Masquer le mot de passe">👁</button>
+              <button type="button" class="btn-eye" id="togglePwd" aria-label="Show/Hide password">👁</button>
             </div>
           </div>
 
           <div class="row">
-            <button type="submit" class="btn">Se connecter</button>
-            <a class="link" href="/login">Réinitialiser</a>
+            <button type="submit" class="btn">Log in</button>
+            <a class="link" href="/login">Reset</a>
           </div>
         </form>
 
@@ -145,14 +145,14 @@
         const caps = document.getElementById("caps");
         const form = document.getElementById("login-form");
 
-        // Toggle affichage mot de passe
+        // Toggle password visibility
         toggle.addEventListener("click", () => {
           pwd.type = pwd.type === "password" ? "text" : "password";
           toggle.textContent = pwd.type === "password" ? "👁" : "🙈";
           pwd.focus();
         });
 
-        // Indicateur Verr. Maj
+        // Caps Lock indicator
         function handleCaps(e) {
           const isCaps = e.getModifierState && e.getModifierState("CapsLock");
           caps.classList.toggle("on", !!isCaps);
@@ -161,7 +161,7 @@
         pwd.addEventListener("keyup", handleCaps);
         pwd.addEventListener("focus", handleCaps);
 
-        // Anti double-submit
+        // Prevent double-submit
         form.addEventListener("submit", () => {
           const btn = form.querySelector("button[type=submit]");
           btn.disabled = true;

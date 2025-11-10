@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Seedbox - Tableau de bord</title>
+  <title>Seedbox - Dashboard</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="shortcut icon" href="/favicon.ico">
@@ -58,7 +58,6 @@
 
     footer{padding:16px; text-align:center; color: var(--muted); font-size:12px}
 
-    /* Section statut */
     .section{ max-width:1100px; margin: 0 auto; padding:0 20px 10px }
     .section h3{ margin:4px 4px 10px; font-size:18px; letter-spacing:.2px }
     .service-list{ display:grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap:12px }
@@ -79,63 +78,60 @@
   </style>
 </head>
 <body>
-  <div class="topbar" role="navigation" aria-label="Barre d’actions">
+  <div class="topbar" role="navigation" aria-label="Action bar">
     <div class="brand"><div class="badge" aria-hidden="true">SB</div><h2 class="title">Seedbox</h2></div>
     <div class="actions">
-      <form method="post" action="/logout" style="margin:0"><button class="btn danger" type="submit" title="Se déconnecter">🚪 Logout</button></form>
+      <form method="post" action="/logout" style="margin:0"><button class="btn danger" type="submit" title="Log out">🚪 Log out</button></form>
     </div>
   </div>
 
   <header>
-    <h1>Tableau de bord Seedbox</h1>
-    <p class="subtitle">Services exposés derrière VPN + HTTPS + authentification.</p>
+    <h1>Seedbox Dashboard</h1>
+    <p class="subtitle">Services exposed behind VPN + HTTPS + authentication.</p>
   </header>
 
-  <!-- Grille liens -->
   <main class="grid">
     <a class="card" href="/qbittorrent" target="_blank" rel="noopener">
-      <span class="tag">Torrent</span><span class="card-title">qBittorrent</span><span class="card-desc">Client BitTorrent web.</span>
+      <span class="tag">Torrent</span><span class="card-title">qBittorrent</span><span class="card-desc">Web BitTorrent client.</span>
     </a>
     <a class="card" href="/prowlarr" target="_blank" rel="noopener">
-      <span class="tag">Indexers</span><span class="card-title">Prowlarr</span><span class="card-desc">Gestion unifiée des indexers pour *arr.</span>
+      <span class="tag">Indexers</span><span class="card-title">Prowlarr</span><span class="card-desc">Unified indexer management for *arr.</span>
     </a>
     <a class="card" href="/sonarr" target="_blank" rel="noopener">
-      <span class="tag">Séries</span><span class="card-title">Sonarr</span><span class="card-desc">Téléchargement & tri des séries.</span>
+      <span class="tag">Series</span><span class="card-title">Sonarr</span><span class="card-desc">Automatic download & sorting of TV shows.</span>
     </a>
     <a class="card" href="/radarr" target="_blank" rel="noopener">
-      <span class="tag">Films</span><span class="card-title">Radarr</span><span class="card-desc">Téléchargement & tri des films.</span>
+      <span class="tag">Movies</span><span class="card-title">Radarr</span><span class="card-desc">Automatic download & sorting of movies.</span>
     </a>
-    <a class="card" href="http://seedbox.maison.lan:8003/joal/ui/#/" target="_blank" rel="noopener">
-      <span class="tag">Joal</span><span class="card-title">JOAL UI</span><span class="card-desc">Seed simulé (web UI).</span>
+    <a class="card" href="/joal/ui/#/" target="_blank" rel="noopener">
+      <span class="tag">Joal</span><span class="card-title">JOAL UI</span><span class="card-desc">Simulated seeding (web UI).</span>
     </a>
     <a class="card" href="/syncthing" target="_blank" rel="noopener">
-      <span class="tag">Sync</span><span class="card-title">Syncthing</span><span class="card-desc">Synchronisation multi-appareils.</span>
+      <span class="tag">Sync</span><span class="card-title">Syncthing</span><span class="card-desc">Multi-device synchronization.</span>
     </a>
     <a class="card" href="https://thevdj.fr4.quickconnect.to/" target="_blank" rel="noopener">
-      <span class="tag">Nas</span><span class="card-title">NAS</span><span class="card-desc">Serveur NAS</span>
+      <span class="tag">NAS</span><span class="card-title">NAS</span><span class="card-desc">NAS server</span>
     </a>
   </main>
 
-  <!-- Santé système -->
   <section class="section">
-    <h3>Santé du système</h3>
+    <h3>System Health</h3>
     <div class="metrics">
-      <div class="metric"><div class="label">Disque (/) utilisé</div><div class="value" id="disk-text">-</div><div class="bar"><i id="disk-bar"></i></div></div>
-      <div class="metric"><div class="label">RAM utilisée</div><div class="value" id="ram-text">-</div><div class="bar"><i id="ram-bar"></i></div></div>
+      <div class="metric"><div class="label">Disk (/) usage</div><div class="value" id="disk-text">-</div><div class="bar"><i id="disk-bar"></i></div></div>
+      <div class="metric"><div class="label">RAM usage</div><div class="value" id="ram-text">-</div><div class="bar"><i id="ram-bar"></i></div></div>
       <div class="metric"><div class="label">CPU</div><div class="value" id="cpu-text">-</div><div class="bar"><i id="cpu-bar"></i></div></div>
     </div>
   </section>
 
-  <!-- Statut des services -->
   <section class="section">
-    <h3>Statut des services</h3>
+    <h3>Service Status</h3>
     <div id="services" class="service-list"></div>
   </section>
 
   <footer>Powered by love.</footer>
 
   <script>
-    const API_BASE = '' // même origine; sinon mettre l'URL complète (https://…)
+    const API_BASE = ''
     const serviceOrder = [
       { key:'qbittorrent', label:'qBittorrent' },
       { key:'prowlarr', label:'Prowlarr' },
@@ -158,7 +154,7 @@
           </div>
         </div>
         <div class="svc-actions">
-          <button class="btn small" data-action="restart">Redémarrer</button>
+          <button class="btn small" data-action="restart">Restart</button>
         </div>`
       wrap.querySelector('button[data-action="restart"]').onclick = async () => {
         const btn = wrap.querySelector('button'); btn.disabled = true; btn.textContent = '…'
@@ -167,9 +163,9 @@
           if(!r.ok) throw new Error('HTTP '+r.status)
           await refreshStatus()
         }catch(e){
-          alert('Échec du redémarrage: '+e.message)
+          alert('Restart failed: '+e.message)
         }finally{
-          btn.disabled = false; btn.textContent = 'Redémarrer'
+          btn.disabled = false; btn.textContent = 'Restart'
         }
       }
       return wrap
@@ -191,13 +187,10 @@
       try{
         const r = await fetch(`${API_BASE}/api/sysinfo`)
         const d = await r.json()
-        // Disque
         const du = d.disk.percent; byId('disk-text').textContent = `${du}% (${fmtBytes(d.disk.used)} / ${fmtBytes(d.disk.total)})`
         setBar('disk-bar', du)
-        // RAM
         const ru = d.ram.percent; byId('ram-text').textContent = `${ru}% (${fmtBytes(d.ram.used)} / ${fmtBytes(d.ram.total)})`
         setBar('ram-bar', ru)
-        // CPU
         const cpu = d.cpu.percent; byId('cpu-text').textContent = `${cpu}% (load ${d.cpu.load1.toFixed(2)})`
         setBar('cpu-bar', cpu)
       }catch(e){ console.error(e) }

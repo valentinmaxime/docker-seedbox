@@ -6,14 +6,14 @@ seedbox.local:443, {$DOMAIN}:443 {
 	
 	encode gzip
 
-	# 1) Fichiers statiques du dashboard (dont favicon)
+	# 1) Static files
 	@fav path /favicon.ico /favicon-16x16.png /favicon-32x32.png /apple-touch-icon.png /site.webmanifest
 	handle @fav {
 		root * /var/www/dashboard
 		file_server
 	}
 
-	# reverse proxy vers la page de login (service 'auth' via loopback du namespace VPN)
+	# reverse proxy to login page
     reverse_proxy 127.0.0.1:3000
 
 	respond /health "ok" 200
@@ -23,7 +23,7 @@ seedbox.local:443, {$DOMAIN}:443 {
 	redir @noSlash {uri}/ 301
 
 	# ======================
-	# Apps AVEC UrlBase
+	# Apps
 	# ======================
 
 	@api path /api/*
@@ -31,7 +31,7 @@ seedbox.local:443, {$DOMAIN}:443 {
 		reverse_proxy 127.0.0.1:5005
 	}		
 
-	# qBittorrent (pas d'UrlBase, mais sert bien à /qbittorrent/ via sous-chemin brut)
+	# qBittorrent
  	handle /qbittorrent/* {
         forward_auth http://127.0.0.1:3000 {
             uri /authz/verify
@@ -77,8 +77,7 @@ seedbox.local:443, {$DOMAIN}:443 {
       reverse_proxy 127.0.0.1:8686
   }
 
-	# syncthing (UrlBase = /syncthing)
-  # Syncthing (protégé via forward_auth)
+  # syncthing (UrlBase = /syncthing)
   handle /syncthing/* {
       forward_auth http://127.0.0.1:3000 {
           uri /authz/verify
@@ -95,8 +94,32 @@ seedbox.local:443, {$DOMAIN}:443 {
   }
   redir /syncthing /syncthing/ 302
 
-	# Dashboard
-	reverse_proxy 127.0.0.1:3000 {
+  # Joal (UrlBase = /joal)
+  handle /joal/* {
+    reverse_proxy 127.0.0.1:8003 {
+        header_up Host {host}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+        transport http {
+            versions 1.1
+        }
+    }
+  }
+
+  # --- Joal (WebUI + WebSocket) ---
+  @joal_ws  path /joal
+  @joal_ui  path /joal/*   
+
+  handle @joal_ws {
+      reverse_proxy 127.0.0.1:8003
+  }
+
+  handle @joal_ui {
+      reverse_proxy 127.0.0.1:8003
+  }
+
+  # Dashboard
+  reverse_proxy 127.0.0.1:3000 {
         header_up Host {upstream_hostport}
         header_up X-Forwarded-Proto {scheme}
         header_up X-Forwarded-Host {host}
@@ -105,12 +128,12 @@ seedbox.local:443, {$DOMAIN}:443 {
         }
   }
 
-	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-		X-Content-Type-Options "nosniff"
-		Referrer-Policy "no-referrer-when-downgrade"
-		X-Frame-Options "SAMEORIGIN"
-	}
-
-	tls internal
+  header {
+      Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      X-Content-Type-Options "nosniff"
+      Referrer-Policy "no-referrer-when-downgrade"
+      X-Frame-Options "SAMEORIGIN"
+  }
+  
+  tls internal
 }

@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-
   vpn:
     image: qmcgaw/gluetun
     container_name: vpn
@@ -35,7 +34,7 @@ services:
       - "${JOAL_PORT}:8003"
       # - "${PROWLARR_PORT}:9696"
     restart: unless-stopped
-  
+
   auth:
     build: ./auth
     container_name: auth
@@ -47,8 +46,8 @@ services:
       - AUTH_USERNAME=${AUTH_USERNAME}
       - AUTH_PASSWORD_HASH=${AUTH_PASSWORD_HASH}
       - AUTH_SESSION_SECRET=${AUTH_SESSION_SECRET}
-      - AUTH_API_TOKENS=${AUTH_API_TOKENS}      
-      - AUTH_API_HEADER=X-Seedbox-Token 
+      - AUTH_API_TOKENS=${AUTH_API_TOKENS}
+      - AUTH_API_HEADER=X-Seedbox-Token
       - AUTH_API_ALLOWED_PREFIXES=/sonarr,/radarr,/qbittorrent,/api
     volumes:
       - ./dashboard:/app/public:ro
@@ -58,18 +57,18 @@ services:
     build: ./api
     container_name: dashboard_api
     depends_on:
-    - vpn
+      - vpn
     network_mode: "service:vpn"
     pid: host # read the host /proc
     environment:
       - TZ=${TZ}
       - SB_ALLOWED=qbittorrent,prowlarr,sonarr,radarr,joal,syncthing,caddy,auth,vpn
       - PSUTIL_PROCFS_PATH=/hostproc
-      - SB_DISK_PATH=/hostdisk  
+      - SB_DISK_PATH=/hostdisk
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # contrôle des containers
-      - C:\:/hostfs:ro # disque du host (racine pour avoir toute la capacité dans les stats)
-      - /proc:/hostproc:ro # proc du host
+      - /var/run/docker.sock:/var/run/docker.sock # containers control
+      - C:\:/hostfs:ro # host disk (root to have all capacity in stats)
+      - /proc:/hostproc:ro # host proc access
     restart: unless-stopped
 
   caddy:
@@ -161,11 +160,11 @@ services:
       - vpn
     network_mode: "service:vpn"
     command:
-    - --joal-conf=/data
-    - --spring.main.web-environment=true
-    - --server.port=8003
-    - --joal.ui.path.prefix=${JOAL_PREFIX}
-    - --joal.ui.secret-token=${JOAL_SECRET}
+      - --joal-conf=/data
+      - --spring.main.web-environment=true
+      - --server.port=8003
+      - --joal.ui.path.prefix=${JOAL_PREFIX}
+      - --joal.ui.secret-token=${JOAL_SECRET}
     volumes:
       - ./config/joal:/data
       - ./downloads/torrents:/torrents:ro
@@ -193,26 +192,9 @@ services:
     volumes:
       - ./downloads:/downloads
       - ./media:/media
-    command: >
-      sh -c "while true; do
-                echo '--- Nettoyage /downloads (>7 jours)...';
-                find /downloads -type f -mtime +7 ! -name '.keep' -delete;
-                find /downloads -type d -empty ! -path /downloads -delete;
-
-                echo '--- Nettoyage /media (>7 jours)...';
-                find /media -type f -mtime +7 \
-                  ! -name '.keep' \
-                  ! -name '.sync*' \
-                  -delete;
-
-                find /media -type d -empty \
-                  ! -path /media \
-                  ! -name '.sync' \
-                  -delete;
-
-                echo '--- Nettoyage terminé, pause 24h ---';
-                sleep 24h;
-              done"
+      - ./logs:/logs           # Persistent log directory
+      - ./cleanup.sh:/cleanup.sh:ro  # Cleanup script
+    command: sh /cleanup.sh
     restart: unless-stopped
 
 volumes:
