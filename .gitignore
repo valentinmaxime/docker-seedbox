@@ -44,7 +44,7 @@ config/qbittorrent/qBittorrent/ipc-socket
 config/syncthing/
 config/sonarr/
 config/radarr/
-config/qbittorent/
+config/qbittorrent/
 config/prowlarr/asp/
 config/prowlarr/config.xml
 config/gluetun/
