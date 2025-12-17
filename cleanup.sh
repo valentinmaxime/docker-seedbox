@@ -8,7 +8,6 @@ while true; do
   TS="$(date +%Y-%m-%d\ %H:%M:%S)"
 
   # Delete old files in /downloads and log each deletion
-  # Skip any .stfolder directory completely
   find /downloads \
     -path "*/.stfolder" -prune -o \
     -type f -mtime +7 \
@@ -29,7 +28,6 @@ while true; do
       done
 
   # Delete old files in /media and log each deletion
-  # Skip any .stfolder directory and its contents
   find /media \
     -path "*/.stfolder" -prune -o \
     -type f -mtime +7 \
@@ -40,10 +38,11 @@ while true; do
         echo "$TS DELETE $f" >> "$LOG_FILE"
       done
 
-  # Delete empty directories in /media (except base, .sync)
-  # .stfolder trees are skipped by -prune above
+  # Delete empty directories in /media (except base, .sync, movies, tv)
   find /media \
     -path "*/.stfolder" -prune -o \
+    -path "/media/movies" -prune -o \
+    -path "/media/tv" -prune -o \
     -type d -empty \
     ! -path /media \
     ! -name ".sync" \
