@@ -49,6 +49,8 @@ config/qbittorrent/
 config/prowlarr/asp/
 config/prowlarr/config.xml
 config/gluetun/
+config/prowlarr/
+config/jackett/
 
 # Caddy / SSL certs
 *.crt
@@ -66,3 +68,4 @@ test.txt
 # local tools
 seedbox.maison.lan.crt
 caddy-root.crt
+

@@ -7,6 +7,7 @@ services:
     cap_add:
       - NET_ADMIN
     environment:
+      - UPDATER_PERIOD=24h
       - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER}
       - VPN_TYPE=openvpn
       - VPN_PORT_FORWARDING_PROVIDER=${VPN_SERVICE_PROVIDER}
@@ -21,7 +22,7 @@ services:
       - PRIVATE_INTERNET_ACCESS_VPN_PORT_FORWARDING_STATUS_FILE=/gluetun/forwarded_port.txt
       - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24
       # Expose only ports you need to access locally through the VPN container
-      - FIREWALL_INPUT_PORTS=80,443,8081,9696,8989,7878,8085,8003,8888,22000,21027,7878,8989,21273
+      - FIREWALL_INPUT_PORTS=80,443,8081,9696,8989,7878,8085,8003,8888,22000,21027,7878,8989,21273,9117
       - DOT=off
     volumes:
       - ./config/gluetun:/gluetun
@@ -34,6 +35,7 @@ services:
       - "${JOAL_PORT}:8003"
       # - "${PROWLARR_PORT}:9696"
     restart: unless-stopped
+    #command: update -enduser -providers mullvad
 
   auth:
     build: ./auth
@@ -59,16 +61,16 @@ services:
     depends_on:
       - vpn
     network_mode: "service:vpn"
-    pid: host # read the host /proc
+    pid: host
     environment:
       - TZ=${TZ}
       - SB_ALLOWED=qbittorrent,prowlarr,sonarr,radarr,joal,syncthing,caddy,auth,vpn
       - PSUTIL_PROCFS_PATH=/hostproc
       - SB_DISK_PATH=/hostdisk
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # containers control
-      - C:\:/hostfs:ro # host disk (root to have all capacity in stats)
-      - /proc:/hostproc:ro # host proc access
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /:/hostfs:ro # C:\:/hostfs:ro  for windows
+      - /proc:/hostproc:ro
     restart: unless-stopped
 
   caddy:
@@ -87,6 +89,22 @@ services:
       - ./dashboard:/var/www/dashboard:ro
       - caddy_data:/data
       - caddy_config:/config
+    restart: unless-stopped
+
+  jackett:
+    image: lscr.io/linuxserver/jackett:latest
+    container_name: jackett
+    depends_on:
+      - vpn
+    network_mode: "service:vpn"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+      - AUTO_UPDATE=true
+    volumes:
+      - ./config/jackett:/config
+      - ./downloads:/downloads
     restart: unless-stopped
 
   qbittorrent:
